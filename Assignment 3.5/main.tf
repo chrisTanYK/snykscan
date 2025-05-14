@@ -53,14 +53,27 @@ module "iam" {
 
 # --- ECS Module ---
 module "ecs" {
-  source              = "./modules/ecs"
-  prefix              = local.prefix
-  vpc_id              = module.network.vpc_id
-  public_subnet_ids   = module.network.public_subnet_ids
-  ecr_repository_url  = module.ecr.repository_url
-  container_port      = 8080
-  ecs_execution_role_arn = module.iam.ecs_execution_role_arn
-  tags                = local.common_tags
+  source                  = "./modules/ecs"
+  prefix                  = local.prefix
+  vpc_id                  = module.network.vpc_id
+  public_subnet_ids       = module.network.public_subnet_ids
+  ecr_repository_url      = module.ecr.repository_url
+  container_port          = 8080
+  ecs_execution_role_arn  = module.iam.ecs_execution_role_arn
+  tags                    = local.common_tags
+
+  depends_on = [module.ecr]
+}
+
+# --- Docker Build & Push to ECR ---
+resource "null_resource" "docker_build_and_push" {
+  provisioner "local-exec" {
+    command = <<EOT
+      aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${module.ecr.repository_url}
+      docker build -t ${module.ecr.repository_url}:latest .
+      docker push ${module.ecr.repository_url}:latest
+    EOT
+  }
 
   depends_on = [module.ecr]
 }
@@ -85,3 +98,4 @@ output "ecs_service_name" {
 output "ecs_exec_role_arn" {
   value = module.iam.ecs_execution_role_arn
 }
+
