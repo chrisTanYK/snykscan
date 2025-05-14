@@ -69,8 +69,13 @@ module "ecs" {
 resource "null_resource" "docker_build_and_push" {
   provisioner "local-exec" {
     command = <<EOT
+      # Log in to ECR
       aws ecr get-login-password --region ${data.aws_region.current.name} | docker login --username AWS --password-stdin ${module.ecr.repository_url}
-      docker build -t ${module.ecr.repository_url}:latest .
+      
+      # Build Docker image from assignment 3.5 directory
+      docker build -t ${module.ecr.repository_url}:latest ./assignment\ 3.5
+      
+      # Push Docker image to ECR
       docker push ${module.ecr.repository_url}:latest
     EOT
   }
@@ -98,4 +103,3 @@ output "ecs_service_name" {
 output "ecs_exec_role_arn" {
   value = module.iam.ecs_execution_role_arn
 }
-
