@@ -41,7 +41,7 @@ resource "aws_iam_role" "lambda_exec" {
   })
 }
 
-data "archive_file" "lambda_zip" {
+data "archive_file" "app_py.zip" {
   type        = "zip"
   source_dir  = "${path.module}/lambda/hello-world"
   output_path = "${path.module}/lambda/hello-world.zip"
